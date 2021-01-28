@@ -9,32 +9,18 @@
 </head>
 
 <body class="stackedit">
-  <div class="stackedit__left">
-    <div class="stackedit__toc">
-      
-<ul>
-<li><a href="#fastapi">FastAPI</a>
-<ul>
-<li><a href="#introduction">Introduction:</a></li>
-<li><a href="#quick-installation">Quick Installation</a></li>
-</ul>
-</li>
-<li><a href="#example">Example</a>
-<ul>
-<li><a href="#interactive-api-docs">Interactive API Docs</a></li>
-</ul>
-</li>
-<li><a href="#example-upgrade">Example Upgrade</a></li>
-</ul>
-
-    </div>
-  </div>
-  <div class="stackedit__right">
-    <div class="stackedit__html">
-      <h1 id="fastapi"><a href="https://fastapi.tiangolo.com/">FastAPI</a></h1>
+  <div class="stackedit__html"><h1 id="fastapi"><a href="https://fastapi.tiangolo.com/">FastAPI</a></h1>
 <h2 id="introduction">Introduction:</h2>
 <p>FastAPI is an API framework based on  <strong>Starlette</strong>  and  <strong>Pydantic</strong>, heavily inspired by previous server versions of  <strong>APIStar</strong>.</p>
-<p>You write your API function parameters with Python 3.6+ type declarations and get automatic data conversion, data validation, OpenAPI schemas (with JSON Schemas) and interactive API documentation UIs.</p>
+<h2 id="benefits-of-fastapi">Benefits of FastAPI:</h2>
+<ul>
+<li>Allows us to quickly develop api</li>
+<li>On the fly Input data validation</li>
+<li>Support dynamic API documentation using Swagger UI and redocs</li>
+<li>Supports OAuth2, JWT and simple HTTP authentication</li>
+<li>Swagger UI provides testing framework for testing API endpoints</li>
+<li>provides async-io option</li>
+</ul>
 <h2 id="quick-installation">Quick Installation</h2>
 <p><code>pip install fastapi</code></p>
 <p>Since we need server to host api locally<br>
@@ -98,10 +84,10 @@ You will see the automatic interactive API documentation (provided by Swagger UI
 <p><img src="https://i.postimg.cc/Wzg5m3gd/image.png" alt="ReDoc"></p>
 <p>We can test above methods to create, get or delete city.<br>
 basically all the CRUD operations.</p>
-<h1 id="example-upgrade">Example Upgrade</h1>
+<h1 id="machine-learning-api-example">Machine Learning API Example</h1>
 <p>Let’s Look at machine learning example in which we can wrap ML model into an api to serve predictions online<br>
 with just few lines of code.</p>
-<p>We will use <a href="https://www.kaggle.com/jacksonchou/hr-data-for-analytics">kaggle data HR analytics data</a>  and build a very basic model which will predict whether the employee will leave organization or not.</p>
+<p>We will use <a href="https://www.kaggle.com/jacksonchou/hr-data-for-analytics">kaggle data HR analytics data</a>  and use pickle file of already built model which will help in predicting whether the employee will leave organization or not.</p>
 <p>Below is the python code to do the same</p>
 <pre><code>import pickle
 import numpy as np
@@ -161,8 +147,7 @@ def predict_attrition(data: Data):
 
 	return {"prediction": int(prediction[0])}
 </code></pre>
-<p>And here is how the FastAPI output will look like<br>
-after starting the uvicorn server  using the command</p>
+<p>And here is how the FastAPI output will look like after starting the uvicorn server  using the following command</p>
 <p><code>uvicorn main:app --reload</code></p>
 <p>and opening the url</p>
 <p><a href="http://127.0.0.1:8000/docs">http://127.0.0.1:8000/docs</a></p>
@@ -173,9 +158,7 @@ after starting the uvicorn server  using the command</p>
 <p><img src="https://i.postimg.cc/tTTGp8wr/image.png" alt="PredictionOutput"></p>
 <p>We can see that model has predicted that Employee will leave the organization based on the input features passed to the model.</p>
 <p>Lastly all we need to do is wrap the API in docker and host it in docker repository in Azure.</p>
-
-    </div>
-  </div>
+</div>
 </body>
 
 </html>
