@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FastAPI-Tutorial</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__left">
+    <div class="stackedit__toc">
+      
+<ul>
+<li><a href="#fastapi">FastAPI</a>
+<ul>
+<li><a href="#introduction">Introduction:</a></li>
+<li><a href="#quick-installation">Quick Installation</a></li>
+</ul>
+</li>
+<li><a href="#example">Example</a>
+<ul>
+<li><a href="#interactive-api-docs">Interactive API Docs</a></li>
+</ul>
+</li>
+<li><a href="#example-upgrade">Example Upgrade</a></li>
+</ul>
+
+    </div>
+  </div>
+  <div class="stackedit__right">
+    <div class="stackedit__html">
+      <h1 id="fastapi"><a href="https://fastapi.tiangolo.com/">FastAPI</a></h1>
+<h2 id="introduction">Introduction:</h2>
+<p>FastAPI is an API framework based on  <strong>Starlette</strong>  and  <strong>Pydantic</strong>, heavily inspired by previous server versions of  <strong>APIStar</strong>.</p>
+<p>You write your API function parameters with Python 3.6+ type declarations and get automatic data conversion, data validation, OpenAPI schemas (with JSON Schemas) and interactive API documentation UIs.</p>
+<h2 id="quick-installation">Quick Installation</h2>
+<p><code>pip install fastapi</code></p>
+<p>Since we need server to host api locally<br>
+<code>pip install uvicorn</code></p>
+<h1 id="example">Example</h1>
+<pre><code>from fastapi import FastAPI
+from pydantic import BaseModel
+
+app=FastAPI()
+db=[]
+
+class city(BaseModel):
+	name: str
+	time_zone: str
+
+
+@app.get('/')
+def index():
+	return {'healthcheck':'True'}
+	
+@app.get('/cities')
+def get_cities():
+	return db
+	
+@app.get('/cities/{city_id}')
+def get_city(city_id:int):
+	return db[city_id-1]
+
+@app.post('/cities')
+def create_city(city:city):
+	db.append(city.dict())
+	return db[-1]
+	
+@app.delete('/cities/{city_id}')
+def delete_city(cityid:int):
+	db.pop(city_id-1)
+	return {}
+</code></pre>
+<p>Run on the following command on shell or cmd prompt</p>
+<p><code>uvicorn main:app --reload</code></p>
+<p>Default port is <strong>8000</strong> and incase if you want to run on different port then</p>
+<p><code>uvicorn main:app --port &lt;portnumber&gt;</code></p>
+<p>you can also use help option of uvicorn to check other parameters</p>
+<p><code>uvicorn --help</code></p>
+<p>Open the Browser at the address<br>
+<a href="http://127.0.0.1:8000/">http://127.0.0.1:8000/</a></p>
+<h2 id="interactive-api-docs">Interactive API Docs</h2>
+<p>Now go to <a href="http://127.0.0.1:8000/docs">http://127.0.0.1:8000/docs</a><br>
+You will see the automatic interactive API documentation (provided by Swagger UI)</p>
+<p><img src="https://i.postimg.cc/j56xGq4f/image.png" alt="Swagger UI"></p>
+<p>We can see that there are 5 methods coming on screen.</p>
+<ol>
+<li>GET /Index</li>
+<li>GET /cities Get Cities</li>
+<li>POST /cities Create Cities</li>
+<li>Get  /cities/{city_id} Get City</li>
+<li>DELETE /cities{city_id} Delete City</li>
+</ol>
+<h3 id="alternative-api-docs¶">Alternative API docs<a href="https://fastapi.tiangolo.com/#alternative-api-docs" title="Permanent link">¶</a></h3>
+<p>And now, go to  <a href="http://127.0.0.1:8000/redoc">http://127.0.0.1:8000/redoc</a></p>
+<p><img src="https://i.postimg.cc/Wzg5m3gd/image.png" alt="ReDoc"></p>
+<p>We can test above methods to create, get or delete city.<br>
+basically all the CRUD operations.</p>
+<h1 id="example-upgrade">Example Upgrade</h1>
+<p>Let’s Look at machine learning example in which we can wrap ML model into an api to serve predictions online<br>
+with just few lines of code.</p>
+<p>We will use <a href="https://www.kaggle.com/jacksonchou/hr-data-for-analytics">kaggle data HR analytics data</a>  and build a very basic model which will predict whether the employee will leave organization or not.</p>
+<p>Below is the python code to do the same</p>
+<pre><code>import pickle
+import numpy as np
+from pydantic import BaseModel
+from configs import config
+from fastapi import FastAPI
+import lightgbm
+
+#Instance of FastAPI class
+app = FastAPI()
+
+# Load pickle files for features,encoder and model
+enc = pickle.load(open(config.enc_pickle, 'rb'))
+features = pickle.load(open(config.feature_pickle, 'rb'))
+clf = pickle.load(open(config.mod_pickle, 'rb'))
+
+# Declare Input Data-Structure
+class Data(BaseModel):
+	satisfaction_level: float
+	last_evaluation: float
+	number_project: float
+	average_montly_hours: float
+	time_spend_company: float
+	Work_accident: float
+	promotion_last_5years: float
+	sales: str
+	salary: str
+	#set default values for APIDocs to render
+class Config:
+	schema_extra = {
+		"example": {
+			"satisfaction_level": 0.38,
+			"last_evaluation": 0.53,
+			"number_project": 2,
+			"average_montly_hours": 157,
+			"time_spend_company": 3,
+			"Work_accident": 0,
+			"promotion_last_5years": 0,
+			"sales": "support",
+			"salary": "low"
+	}
+}
+
+@app.post("/predict")
+def predict_attrition(data: Data):
+
+	# Extract data in correct order
+	data_dict = data.dict()
+
+	to_predict = [data_dict[feature] for feature in features]
+	# Apply one-hot encoding
+	encoded_features = 	list(enc.transform(np.array(to_predict[-2:]).reshape(1, -1))[0])
+	to_predict = np.array(to_predict[:-2] + encoded_features)
+	
+	# Create and return prediction
+	prediction = clf.predict(to_predict.reshape(1, -1))
+
+	return {"prediction": int(prediction[0])}
+</code></pre>
+<p>And here is how the FastAPI output will look like<br>
+after starting the uvicorn server  using the command</p>
+<p><code>uvicorn main:app --reload</code></p>
+<p>and opening the url</p>
+<p><a href="http://127.0.0.1:8000/docs">http://127.0.0.1:8000/docs</a></p>
+<p><img src="https://i.postimg.cc/gcH8fQm9/image.png" alt="Attrition API"></p>
+<p>Click on <strong>Try it out</strong> Button and JSON will be available with sample input values to test the POST method of API</p>
+<p><img src="https://i.postimg.cc/VvhYxzNB/image.png" alt="PredictAttritionJson"></p>
+<p>Click on <strong>Execute</strong> button and we will get the live Predictions from model along-with curl and response body.</p>
+<p><img src="https://i.postimg.cc/tTTGp8wr/image.png" alt="PredictionOutput"></p>
+<p>We can see that model has predicted that Employee will leave the organization based on the input features passed to the model.</p>
+<p>Lastly all we need to do is wrap the API in docker and host it in docker repository in Azure.</p>
+
+    </div>
+  </div>
+</body>
+
+</html>
