@@ -1,0 +1,226 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPU architecture flow</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="optimizing-code--cpu-architecture-understanding">Optimizing Code &amp; CPU architecture understanding</h1>
+<p>Optimizing code is required when we identify that code is running slower then expected time and hence we need improve its performance. But before that we need to have an actual understanding of Memory and how CPU utilizes it.</p>
+<h3 id="mental-model-of-a-memory">Mental model of a memory</h3>
+<p>In order to optimize code we need to have mental model of memory.</p>
+<h3 id="high-level-view">High Level View</h3>
+<p>At the highest level you have a CPU’s core memory which directly accesses a L1 cache. The L1 cache has the fastest access, so things which will be needed soon are kept there. However, it is filled from the L2 cache, which itself is filled from the L3 cache, which is filled from the main memory. This bring us to the first idea in optimizing code: using things that are already in a closer cache can help the code run faster because it doesn’t have to be queried for and moved up this chain.</p>
+<p><img src="https://hackernoon.com/hn-images/1*nT3RAGnOAWmKmvOBnizNtw.png" alt="enter image description here"></p>
+<p>When something needs to be pulled directly from main memory this is known as a <em>cache miss</em>. To understand the cost of a cache miss vs standard calculations, take a look at <a href="http://ithare.com/infographics-operation-costs-in-cpu-clock-cycles/">this classic chart</a>.</p>
+<h3 id="cache-lines-and-rowcolumn-major">Cache Lines and Row/Column-Major</h3>
+<p>Many algorithms in numerical linear algebra are designed to minimize cache misses. Because of this chain, many modern CPUs try to guess what you will want next in your cache. When dealing with arrays, it will speculate ahead and grab what is known as a  <em>cache line</em>: the next chunk in the array. Thus, your algorithms will be faster if you iterate along the values that it is grabbing.</p>
+<p>The values that it grabs are the next values in the contiguous order of the stored array. There are two common conventions: row major and column major. Row major means that the linear array of memory is formed by stacking the rows one after another, while column major puts the column vectors one after another.</p>
+<ul>
+<li>Column major<br>
+<img src="https://eli.thegreenplace.net/images/2015/column-major-2D.png" alt="enter image description here"></li>
+</ul>
+<p>Julia, FORTRAN and MATLAB are column major but Numpy is row major</p>
+<ul>
+<li>Row major<br>
+<img src="https://eli.thegreenplace.net/images/2015/row-major-2D.png" alt="enter image description here"></li>
+</ul>
+<h3 id="stack--heap-memory">Stack &amp; Heap Memory</h3>
+<p><img src="https://bayanbox.ir/view/581244719208138556/virtual-memory.jpg" alt="enter image description here"></p>
+<p><img src="https://camo.githubusercontent.com/ca96d70d09ce694363e44b93fd975bb3033898c1/687474703a2f2f7475746f7269616c732e6a656e6b6f762e636f6d2f696d616765732f6a6176612d636f6e63757272656e63792f6a6176612d6d656d6f72792d6d6f64656c2d352e706e67" alt="enter image description here"></p>
+<h4 id="stack">Stack:</h4>
+<ul>
+<li>
+<p>Stack require static allocation</p>
+</li>
+<li>
+<p>It requires to know the variable type and size at compile time</p>
+</li>
+<li>
+<p>Variable can be accessed instantaneously because data is stored in ordered fashion(<strong>LIFO</strong> : Last In First Out)</p>
+</li>
+<li>
+<p>Time-complexity for accessing data in Stack memory is <strong>O(1)</strong></p>
+</li>
+<li>
+<p>Since Stack memory is limited we need to use Heap memory</p>
+<p><img src="https://i.stack.imgur.com/ZLzMV.jpg" alt="Stack"></p>
+</li>
+</ul>
+<h4 id="heap">Heap:</h4>
+<ul>
+<li>Heap is essentially stack of pointers to objects in memory</li>
+<li>When Heap variables are needed their values are pulled up in cache chain</li>
+</ul>
+<p><img src="https://i.stack.imgur.com/kINqo.jpg" alt="enter image description here"></p>
+<h3 id="heap-allocations-and-speed">Heap Allocations and Speed</h3>
+<p>Because Stack memory is limited we store large-data in Heap memory.<br>
+and accessing heap memory is slower due to pointer indirection.</p>
+<ul>
+<li><strong>Question</strong>: Why large arrays are allocated heap memory?</li>
+<li><strong>Answer</strong>: Because we don’t know at compile what will be size of the array and hence they are allocated heap memory</li>
+<li><strong>Question</strong>: How can we write code which will enable us to efficiently access data from heap memory?</li>
+<li><strong>Answer</strong>: There are following few ways we can improve heap allocation:
+<ul>
+<li>Mutation</li>
+<li>Broadcasting</li>
+<li>Vectorization</li>
+</ul>
+</li>
+</ul>
+<p>First question comes to mind why python for-loop is so slow compare to C or C++?</p>
+<p>Because of the <strong>dynamically typed nature of python</strong>. Python first goes line-by-line through the code, compiles the code into <em>bytecode</em>, which is then executed to run the program.</p>
+<p>Due to the <strong>dynamic nature</strong> of python it has no idea about the type of variable so in each iteration during runtime it has to perform the bunch of checks like determining <strong>type of variable, resolving its scope , checking for any invalid operations</strong>.</p>
+<h3 id="mutation">Mutation</h3>
+<p>Many times you do need to write into an array, so how can you write into an array without performing a heap allocation?</p>
+<p>The answer is mutation. Mutation is changing the values of an already existing array. In that case, no free memory has to be found to put the array (and no memory has to be freed by the garbage collector).</p>
+<pre><code># explicity array
+def normalize(array: np.ndarray) -&gt; np.ndarray:
+    """
+    Takes a floating point array.
+    Returns a normalized array with values between 0 and 1.
+    """
+    low = array.min()
+    high = array.max()
+    return (array - low) / (high - low)    
+# Memory foot print of above function `3*A` bytes of RAM
+
+## In-place modification (example of mutation)
+def normalize_in_place(array: np.ndarray):
+    low = array.min()
+    high = array.max()
+    array -= low
+    array /= high - low
+   
+# memory footprint will be A bytes compare to 3*A bytes
+# aka hidden mutation
+def normalize(array: np.ndarray) -&gt; np.ndarray:
+    low = array.min()
+    high = array.max()
+    result = array.copy()
+    result -= low
+    result /= high - low
+    return result
+
+# memory footprint will be 2*A bytes compare to 3*A bytes
+</code></pre>
+<p>Example Application :</p>
+<ul>
+<li>Many NumPy APIs include an  <code>out</code>  keyword argument, allowing you to write the results to an existing array, often including the original one.</li>
+<li>Pandas operations usually have an  <code>inplace</code>  keyword argument that modifies the object instead of returning a new one.</li>
+</ul>
+<h3 id="vectorization">Vectorization</h3>
+<p><em>Question</em>: What is vectorization and example to understand how it can improve performance?</p>
+<p>Now we know because of <strong>For loop</strong> and <strong>type checking</strong> the code is slowing down  in python. So that’s why optimized pre-compiled C or C++ code is written under the hood of numpy to get maximum speed.</p>
+<p>Numpy allows arrays to have only single data-type which helps in getting rid of type-checking issue compare to python.</p>
+<p>Let’s take an example:<br>
+<img src="https://i.postimg.cc/SKzBTT7c/image.png" alt="enter image description here"></p>
+<p><em>Question</em>: How does this happen?<br>
+This is because internally, NumPy delegates the loop to <strong>pre-compiled, optimized C code</strong> under the hood. This process is called <em>vectorization</em> of the multiplication operator.</p>
+<p>Technically, the term <em>vectorization of a function</em> means that the function is now <strong>applied simultaneously over many values instead of a single value</strong>, which is how it looks from the python code ( Loops are nonetheless executed but in C)</p>
+<p>Let’s take one more example from vector and matrix multiplication. We all know how  Regression works and below is equation for the same</p>
+<p><img src="https://miro.medium.com/max/342/1*2ZdcTupgZzVps_NOiyzpdg.png" alt="enter image description here"></p>
+<p>Let’s implement same in python<br>
+<img src="https://i.postimg.cc/gkLkFDDk/image.png" alt="enter image description here"></p>
+<p>The above implementation considers only 10k training examples and 1k features.</p>
+<p>Clearly the vectorized implementation is much faster than the non vectorized one. <strong><em>Numpy</em></strong> is a python library that is used for scientific computation.</p>
+<p>It  offers various inbuilt functions that make it easy for us to write a vectorized code.</p>
+<p>Next Question comes mind is that,  we can do time-it or timer for single function but when we have whole script file from which functions are called then what should be done?</p>
+<h3 id="using-cprofile-to-identify-the-bottlenecks">Using cProfile to Identify the Bottlenecks</h3>
+<p>So when we have big script file having lots of functions we can use  a tool called <code>cProfile</code> that helps you profile your code and get running times for various elements in your code. In order to use cProfile, put your code inside a python script and run the following command from the terminal.<br>
+<code>python -m cProfile -o loops.log mycode_loop.py</code></p>
+<p>Here, <code>-o</code> flag denotes the name of the log file that will be created. In our case, this file is named as <code>loops.log</code>. In order to read this file, we will be needing another utility called <code>cProfileV</code> which can be installed with <code>pip</code>.</p>
+<p><code>pip install cprofilev</code></p>
+<p>Once you have installed it, we can use it to view our log file<br>
+<code>cprofilev -f loops.log</code></p>
+<p><code>[cProfileV]: cProfile output available at http://127.0.0.1:4000</code></p>
+<p>Go to the address in the browser. You will see something like this.</p>
+<p><img src="https://blog.paperspace.com/content/images/size/w1000/2020/07/image-28.png" alt="enter image description here"></p>
+<p>Here, you see column heading on the top regarding each function call in your code.</p>
+<ol>
+<li><code>ncalls</code>: Number of function calls made.</li>
+<li><code>tottime</code>: Total time spent in a function alone</li>
+<li><code>percall</code>: Time taken per call.</li>
+<li><code>cumtime</code>: Total time spent in the function <em>plus</em> all functions that this function called.</li>
+<li><code>filename/lineno</code>: File name and Line number of the function call.</li>
+</ol>
+<p>Here, we are most interesting in the time a function call takes by itself, i.e. <code>tottime</code>. We click on the column label to sort the entries by <code>tottime</code></p>
+<p><img src="https://blog.paperspace.com/content/images/2020/07/image-27.png" alt="enter image description here"></p>
+<p>Once, we have done that we see exactly which functions are taking the most time.</p>
+<p><img src="https://blog.paperspace.com/content/images/2020/07/image-29.png" alt="enter image description here"></p>
+<p>Here, we see that that the function <code>compute_l2_distance</code> and <code>get_closest_centroid</code> take the maximum individual times. Notice that both of these function include loops which can be vectorized. The <code>compute_l2_distance</code> is called 1 million times, while <code>get_closest_centroid</code> is called 200,000 times.</p>
+<p>So there is an opportunity to improve the performance using vectorization.</p>
+<h3 id="broadcasting">Broadcasting</h3>
+<p><em>Question</em>: What broadcasting is all about, example demonstrating its applications?</p>
+<ul>
+<li>
+<p>Under some constraints, the smaller matrix is <strong><em>broadcasted</em></strong> to the bigger matrix so that they have compatible dimensions to carry out various mathematical operations. There are few rules that must be followed for Broadcasting in numpy</p>
+<ol>
+<li>Both array must have equal size or</li>
+<li>One of them is 1</li>
+</ol>
+</li>
+</ul>
+<p>if these conditions are not met a <code>ValueError: operands could not be broadcast together</code> exception is thrown, indicating that the arrays have incompatible shapes.</p>
+<p>Below is code examples of Numpy broadcasting</p>
+<pre><code>&gt;&gt;code: 
+import numpy as np 
+x = np.arange(4)
+xx = x.reshape(4,1)
+y = np.ones(5)
+z = np.ones((3,4))	
+
+print("Shape of x",x.shape)
+print("Shape of Y",y.shape)
+print("Shape of xx",xx.shape)
+print("Shape of z",z.shape)
+
+&gt;&gt;result:
+Shape of x (4,)
+Shape of y (5,)
+Shape of xx (4, 1)
+Shape of z (3, 4)
+
+# add x and y
+&gt;&gt;code: x+y
+
+&gt;&gt;result: ValueError: operands could not be broadcast together with shapes (4,) (5,)
+
+# add xx and y
+&gt;&gt;code: xx+y
+&gt;&gt;result:
+array([[1., 1., 1., 1., 1.],
+       [2., 2., 2., 2., 2.],
+       [3., 3., 3., 3., 3.],
+       [4., 4., 4., 4., 4.]])
+
+&gt;&gt;code: (xx+y).shape
+&gt;&gt;result: (4, 5)
+
+# add x and z
+&gt;&gt;code: x+z
+&gt;&gt;result: 
+array([[1., 2., 3., 4.],
+       [1., 2., 3., 4.],
+       [1., 2., 3., 4.]])
+&gt;&gt;code: (x+z).shape
+&gt;&gt;result: (3, 4)
+
+</code></pre>
+<p>Examples of application:</p>
+<ul>
+<li>Gradient descent utilizes broadcasting</li>
+<li>Adding colors to image matrix</li>
+</ul>
+<p>References:</p>
+<p><a href="https://pythonspeed.com/articles/minimizing-copying/">https://pythonspeed.com/articles/minimizing-copying/</a><br>
+<a href="https://blog.paperspace.com/numpy-optimization-vectorization-and-broadcasting/">https://blog.paperspace.com/numpy-optimization-vectorization-and-broadcasting/</a><br>
+<a href="https://blog.paperspace.com/speed-up-kmeans-numpy-vectorization-broadcasting-profiling/">https://blog.paperspace.com/speed-up-kmeans-numpy-vectorization-broadcasting-profiling/</a></p>
+</div>
+</body>
+
+</html>
