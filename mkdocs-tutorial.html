@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mkdocs-tutorial</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__left">
+    <div class="stackedit__toc">
+      
+<ul>
+<li><a href="#mkdocs-for-product-documentation">mkdocs for product documentation</a>
+<ul>
+<li><a href="#start-with-installation">start with installation</a></li>
+<li><a href="#quick-usage">Quick usage</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+  </div>
+  <div class="stackedit__right">
+    <div class="stackedit__html">
+      <h1 id="mkdocs-for-product-documentation">mkdocs for product documentation</h1>
+<h2 id="start-with-installation">start with installation</h2>
+<p>We can either use existing python virtual environment or create a new one for this exercise</p>
+<p>using <code>pip</code></p>
+<blockquote>
+<p><code>pip install mkdocstrings</code></p>
+</blockquote>
+<p>with <code>conda</code></p>
+<blockquote>
+<p><code>conda install -c conda-forge mkdocstrings</code></p>
+</blockquote>
+<p>Theme installation</p>
+<blockquote>
+<p><code>pip install mkdocs-material</code></p>
+</blockquote>
+<p>For detail usage of theme with mkdocs refer <a href="https://squidfunk.github.io/mkdocs-material/reference/code-blocks/">this link</a></p>
+<p>Once all the installation is done in the virtual environment</p>
+<p>start with following steps:</p>
+<ul>
+<li>
+<p>open the command prompt window with activated virtual environment or the shell window with activated environment.</p>
+</li>
+<li>
+<p>Go to project folder structure via command window, where we want to start the documentation. Ideally it is the root of the folder structure.</p>
+</li>
+<li>
+<p>Run -&gt; <code>mkdocs new &lt;project-name&gt;</code> in the terminal window</p>
+</li>
+<li>
+<p>It will create following folder and yaml file.<br>
+<img src="https://i.postimg.cc/gkRY9zwh/image.png" alt="ReDoc"></p>
+</li>
+</ul>
+<h2 id="quick-usage">Quick usage</h2>
+<pre class=" language-yaml"><code class="prism  language-yaml"><span class="token comment"># mkdocs.yml</span>
+<span class="token key atrule">theme</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"material"</span>
+
+<span class="token key atrule">plugins</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> search
+<span class="token punctuation">-</span> mkdocstrings
+</code></pre>
+<p>Within the docs folder create markdown file and following</p>
+<pre class=" language-markdown"><code class="prism  language-markdown"><span class="token title important"><span class="token punctuation">#</span> Reference</span>
+
+::: my<span class="token italic"><span class="token punctuation">_</span>library.my<span class="token punctuation">_</span></span>module.my_class
+</code></pre>
+<p>After you have added the class or function name in the markdown file run the following command from terminal to see it in action.</p>
+<p><code>mkdocs serve</code>- open the browser and type <a href="http://localhost:8000">http://localhost:8000</a> url to see the documentation in action.<br>
+<code>mkdocs build</code> - to generate the static html site source code<br>
+<code>mkdocs help</code> - to get help on mkdocs</p>
+<p>We are majorly using combination of these 3 packages</p>
+<ul>
+<li><strong>mkdocstrings</strong> - To generate autodocumentation using docstrings from class and python functions</li>
+<li><strong>mkdocs</strong> - To generate and build html site from markdown files</li>
+<li><strong>mkdocs-material theme</strong> To apply visually appealing theme to our documentation style.</li>
+</ul>
+<h3 id="references">References</h3>
+<p><a href="https://www.mkdocs.org/getting-started/#getting-started-with-mkdocs">mkdocs website</a><br>
+<a href="https://mkdocstrings.github.io/usage/">mkdocstrings usage guide</a><br>
+<a href="https://squidfunk.github.io/mkdocs-material/reference/code-blocks/">mkdocs-material-theme</a></p>
+
+    </div>
+  </div>
+</body>
+
+</html>
